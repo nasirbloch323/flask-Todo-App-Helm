@@ -1,0 +1,41 @@
+{{- if .Values.ingress.enabled }}
+# Ingress routes external HTTP/HTTPS requests to the internal Service.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  # Use a unique name for this release's routing rule.
+  name: {{ include "releaseboard.fullname" . }}
+  labels:
+    {{- include "releaseboard.labels" . | nindent 4 }}
+  # Controller-specific annotations are optional.
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  # ingressClassName tells Kubernetes which Ingress controller should handle this rule.
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className | quote }}
+  {{- end }}
+  # Rules connect hostnames and URL paths to the application Service.
+  rules:
+    {{- range .Values.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ include "releaseboard.fullname" $ }}
+                port:
+                  number: {{ $.Values.service.port }}
+          {{- end }}
+    {{- end }}
+  # TLS entries reference Kubernetes Secrets that contain certificates.
+  {{- with .Values.ingress.tls }}
+  tls:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
