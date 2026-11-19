@@ -1,2 +1,4 @@
-Flask==3.0.3
-
+# Flask provides routing, request handling, and HTML template rendering.
+Flask==3.1.1
+# Gunicorn is a production WSGI server; do not use Flask's debug server in Kubernetes.
+gunicorn==23.0.0
