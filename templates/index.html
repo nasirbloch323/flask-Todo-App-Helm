@@ -1,32 +1,87 @@
-<!DOCTYPE html>
+<!doctype html>
+<!-- Declare HTML5 so browsers use standards mode. -->
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Flask TODO App - Last Class</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <!-- Use UTF-8 so icons and user-entered text render correctly. -->
+  <meta charset="utf-8">
+  <!-- Make the layout responsive on phones, tablets, and desktops. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Show the product name in the browser tab. -->
+  <title>ReleaseBoard | Cloud Operations</title>
+  <!-- Load the project's stylesheet through Flask's static-file helper. -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="container">
-        <h1>📝 Flask TODO</h1>
-        <form action="/add" method="POST">
-            <input type="text" name="task" placeholder="Add a new task..." required>
-            <button type="submit">Add</button>
+  <!-- Main page wrapper keeps the dashboard centered and readable. -->
+  <main class="shell">
+    <!-- Header introduces the application and displays runtime metadata. -->
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">R</span><div><strong>ReleaseBoard</strong><small>Cloud operations workspace</small></div></div>
+      <div class="runtime"><span class="pulse"></span>{{ app_env }} · v{{ app_version }}</div>
+    </header>
+
+    <!-- Hero section explains what this sample application is for. -->
+    <section class="hero">
+      <div><p class="eyebrow">DEPLOYMENT CONTROL CENTER</p><h1>Ship with <em>confidence.</em></h1><p class="subheading">Track releases, watch deployment progress, and learn how Helm delivers your app to Kubernetes.</p></div>
+      <div class="hero-art" aria-hidden="true"><span>↗</span><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div></div>
+    </section>
+
+    <!-- Display one-time success or validation messages sent by Flask. -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <section class="flash-list" aria-live="polite">
+          {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
+        </section>
+      {% endif %}
+    {% endwith %}
+
+    <!-- Summary cards are calculated from the SQLite database. -->
+    <section class="stats">
+      <article class="stat-card"><span class="stat-label">TOTAL RELEASES</span><strong>{{ total }}</strong><span class="stat-foot">Tracked in this workspace</span></article>
+      <article class="stat-card"><span class="stat-label">DEPLOYED</span><strong class="green">{{ deployed }}</strong><span class="stat-foot">Successfully shipped</span></article>
+      <article class="stat-card"><span class="stat-label">PLANNED</span><strong class="amber">{{ planned }}</strong><span class="stat-foot">Waiting for deployment</span></article>
+    </section>
+
+    <!-- Two-column layout places the create form beside the release table. -->
+    <section class="workspace">
+      <article class="panel create-panel">
+        <div class="panel-heading"><div><p class="eyebrow">NEW ENTRY</p><h2>Plan a release</h2></div><span class="step">01</span></div>
+        <!-- POST sends form values to Flask's create_release route. -->
+        <form action="{{ url_for('create_release') }}" method="post" class="release-form">
+          <label for="service">Service name</label><input id="service" name="service" placeholder="e.g. payments-api" maxlength="80" required>
+          <div class="form-row"><div><label for="version">Version</label><input id="version" name="version" placeholder="v2.4.0" maxlength="30" required></div><div><label for="environment">Environment</label><select id="environment" name="environment"><option>Development</option><option>Staging</option><option>Production</option></select></div></div>
+          <label for="notes">Release notes <span class="optional">OPTIONAL</span></label><textarea id="notes" name="notes" rows="3" placeholder="What changed in this release?"></textarea>
+          <button class="primary-button" type="submit">Add to release board <span>↗</span></button>
         </form>
+        <div class="hint"><span>✦</span><p><strong>Learning tip</strong><br>Every release is stored in SQLite on the mounted <code>/data</code> directory. A PersistentVolumeClaim keeps it across Pod restarts.</p></div>
+      </article>
 
-        <ul>
-            {% for todo in todos %}
-                <li class="{{ 'done' if todo[2] else '' }}">
-                    <a href="/toggle/{{ todo[0] }}">{{ todo[1] }}</a>
-                    <a href="/delete/{{ todo[0] }}" class="delete">✖</a>
-                </li>
+      <article class="panel table-panel">
+        <div class="panel-heading"><div><p class="eyebrow">ACTIVITY</p><h2>Release pipeline</h2></div><span class="count">{{ total }} ITEMS</span></div>
+        {% if releases %}
+          <div class="release-list">
+            {% for release in releases %}
+              <!-- Each row represents one record returned by the dashboard query. -->
+              <div class="release-row">
+                <div class="release-icon">{{ release.service[0]|upper }}</div>
+                <div class="release-info"><strong>{{ release.service }}</strong><span>{{ release.version }} · {{ release.environment }}</span>{% if release.notes %}<small>{{ release.notes }}</small>{% endif %}</div>
+                <div class="release-actions">
+                  <!-- Status changes are POST requests so state changes are not triggered by crawlers. -->
+                  <form action="{{ url_for('update_status', release_id=release.id) }}" method="post"><select name="status" aria-label="Change status for {{ release.service }}" onchange="this.form.submit()"><option {% if release.status == 'Planned' %}selected{% endif %}>Planned</option><option {% if release.status == 'Deploying' %}selected{% endif %}>Deploying</option><option {% if release.status == 'Deployed' %}selected{% endif %}>Deployed</option><option {% if release.status == 'Failed' %}selected{% endif %}>Failed</option></select></form>
+                  <form action="{{ url_for('delete_release', release_id=release.id) }}" method="post"><button class="delete-button" aria-label="Delete {{ release.service }}">×</button></form>
+                </div>
+              </div>
             {% endfor %}
-        </ul>
+          </div>
+        {% else %}
+          <!-- Empty state guides a first-time user to create a release. -->
+          <div class="empty-state"><span>⌁</span><h3>Your pipeline is clear</h3><p>Add your first release to see deployment activity here.</p></div>
+        {% endif %}
+      </article>
+    </section>
 
-        <div class="actions">
-            <a href="/clear_completed">Clear Completed</a>
-            <a href="/clear_all">Clear All</a>
-        </div>
-    </div>
+    <!-- Footer links expose health and metrics endpoints for Kubernetes learning. -->
+    <footer><span>BUILT FOR LEARNING · FLASK + DOCKER + KUBERNETES + HELM</span><div><a href="/healthz">Health</a><a href="/readyz">Readiness</a><a href="/metrics">Metrics</a></div></footer>
+  </main>
 </body>
 </html>
-
