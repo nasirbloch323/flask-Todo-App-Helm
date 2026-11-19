@@ -1,0 +1,121 @@
+# Deployment manages the desired number of identical Flask Pods.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  # Give this Deployment the release-specific full name.
+  name: {{ include "releaseboard.fullname" . }}
+  # Attach standard metadata labels.
+  labels:
+    {{- include "releaseboard.labels" . | nindent 4 }}
+spec:
+  # replicas is ignored by the HPA when autoscaling is enabled.
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  # selector must match the labels placed on the Pod template below.
+  selector:
+    matchLabels:
+      {{- include "releaseboard.selectorLabels" . | nindent 6 }}
+  # RollingUpdate replaces Pods gradually instead of stopping everything at once.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  # template contains the Pod specification that the Deployment creates.
+  template:
+    metadata:
+      labels:
+        {{- include "releaseboard.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      # Use the dedicated ServiceAccount when one is created.
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ default (include "releaseboard.fullname" .) .Values.serviceAccount.name }}
+      {{- else if .Values.serviceAccount.name }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- end }}
+      # Apply Pod-level security settings from values.yaml.
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      # Containers are the runnable workloads inside this Pod.
+      containers:
+        - name: releaseboard
+          # Build the image reference from repository, tag, and pull policy values.
+          image: "{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          # Expose the port Gunicorn listens on inside the container.
+          ports:
+            - name: http
+              containerPort: 5000
+              protocol: TCP
+          # Load non-sensitive configuration from the ConfigMap.
+          envFrom:
+            - configMapRef:
+                name: {{ include "releaseboard.fullname" . }}-config
+          # Mount the Secret only when secret creation is enabled.
+          {{- if .Values.secret.create }}
+          env:
+            - name: FLASK_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "releaseboard.fullname" . }}-secret
+                  key: FLASK_SECRET_KEY
+          {{- end }}
+          # Probe endpoints let Kubernetes distinguish a dead process from a ready app.
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.probes.liveness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.probes.readiness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+          # Resource requests help scheduling; limits prevent unlimited consumption.
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          # Apply container-level hardening from values.yaml.
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          # Mount writable data separately because the root filesystem is read-only.
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+      # Volumes connect storage claims or temporary directories to the container.
+      volumes:
+        - name: data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ default (printf "%s-data" (include "releaseboard.fullname" .)) .Values.persistence.existingClaim }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: tmp
+          emptyDir: {}
+      # Schedule only onto nodes matching these optional placement rules.
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      # Tolerations permit placement on nodes with matching taints.
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      # Affinity controls advanced scheduling preferences.
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
