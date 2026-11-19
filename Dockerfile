@@ -7,7 +7,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1
 
 # Create a dedicated unprivileged account instead of running the web process as root.
-RUN groupadd --system app && useradd --system --gid app --create-home app
+RUN groupadd --gid 10001 app && useradd --uid 10001 --gid app --create-home app
 
 # Set the working directory for all following build and runtime commands.
 WORKDIR /app
