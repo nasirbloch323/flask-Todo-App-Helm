@@ -5,6 +5,7 @@ Docker, Kubernetes objects, and Helm values to a working application.
 """
 
 import os  # Read runtime configuration supplied by Docker or Kubernetes.
+from contextlib import contextmanager  # Ensure each database connection is closed after use.
 import sqlite3  # Use a lightweight database stored on the mounted /data volume.
 from datetime import datetime, timezone  # Add consistent UTC timestamps to releases.
 from flask import Flask, flash, redirect, render_template, request, url_for  # Build the web UI.
@@ -15,12 +16,20 @@ DB_PATH = os.getenv("DATABASE_PATH", "/data/releases.db")  # Keep database files
 APP_ENV = os.getenv("APP_ENV", "development")  # Show which environment is running.
 APP_VERSION = os.getenv("APP_VERSION", "1.0.0")  # Display the version injected by Helm.
 
+@contextmanager
 def get_db():
-    """Open a SQLite connection and return rows as dictionary-like objects."""
+    """Open a SQLite connection and always close it after the caller finishes."""
     os.makedirs(os.path.dirname(DB_PATH) or ".", exist_ok=True)  # Ensure the database directory exists.
     connection = sqlite3.connect(DB_PATH)  # Open or create the SQLite database file.
     connection.row_factory = sqlite3.Row  # Allow templates to access columns by name.
-    return connection  # Give the caller responsibility for closing the connection.
+    try:  # Keep the connection open while the caller performs its SQL work.
+        yield connection  # Let the route use the connection inside a with block.
+        connection.commit()  # Save successful changes made by the caller.
+    except Exception:  # Roll back partial changes if a database operation fails.
+        connection.rollback()  # Avoid leaving a half-completed transaction.
+        raise  # Preserve the original error for Flask's error handler.
+    finally:  # Run cleanup for both successful and failed database operations.
+        connection.close()  # Release the SQLite connection after every request.
 
 def initialize_database():
     """Create the releases table when the container starts for the first time."""
