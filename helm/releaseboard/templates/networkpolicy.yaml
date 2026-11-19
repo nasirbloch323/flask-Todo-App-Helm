@@ -1,0 +1,26 @@
+{{- if .Values.networkPolicy.enabled }}
+# NetworkPolicy restricts incoming connections to Pods selected by its podSelector.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "releaseboard.fullname" . }}
+  labels:
+    {{- include "releaseboard.labels" . | nindent 4 }}
+spec:
+  # Select only this release's application Pods.
+  podSelector:
+    matchLabels:
+      {{- include "releaseboard.selectorLabels" . | nindent 6 }}
+  # Declare that this policy governs incoming connections.
+  policyTypes:
+    - Ingress
+  # Allow HTTP traffic from the configured namespace selector.
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              {{- toYaml .Values.networkPolicy.ingressFromNamespaceSelector | nindent 14 }}
+      ports:
+        - protocol: TCP
+          port: 5000
+{{- end }}
