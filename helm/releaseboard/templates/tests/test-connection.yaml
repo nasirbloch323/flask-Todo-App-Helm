@@ -1,0 +1,21 @@
+# Helm test Pods run only when the operator executes helm test.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "releaseboard.fullname" . }}-test-connection"
+  labels:
+    {{- include "releaseboard.labels" . | nindent 4 }}
+  # helm.sh/hook marks this Pod as a test hook rather than a normal workload.
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  # A test Pod needs no Kubernetes API credentials.
+  automountServiceAccountToken: false
+  # Use a tiny curl image to test the in-cluster Service DNS and HTTP response.
+  containers:
+    - name: wget
+      image: busybox:1.36
+      command: ['sh', '-c', 'wget -qO- http://{{ include "releaseboard.fullname" . }}:{{ .Values.service.port }}/healthz']
+  # The test container exits after checking the endpoint.
+  restartPolicy: Never
