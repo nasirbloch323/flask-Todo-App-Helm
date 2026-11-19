@@ -1,0 +1,16 @@
+{{- if .Values.podDisruptionBudget.enabled }}
+# PodDisruptionBudget protects availability during voluntary maintenance disruptions.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "releaseboard.fullname" . }}
+  labels:
+    {{- include "releaseboard.labels" . | nindent 4 }}
+spec:
+  # minAvailable is the number of Pods that must remain available.
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  # Select the Pods created by this chart's Deployment.
+  selector:
+    matchLabels:
+      {{- include "releaseboard.selectorLabels" . | nindent 6 }}
+{{- end }}
