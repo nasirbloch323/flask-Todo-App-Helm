@@ -1,0 +1,12 @@
+# apiVersion selects the Helm chart format understood by Helm 3.
+apiVersion: v2
+# name is the stable identifier used by Helm install and upgrade commands.
+name: releaseboard
+# description appears in chart metadata and helps humans understand the package.
+description: A fully documented Flask release tracking platform for learning Helm and Kubernetes.
+# type application means this chart deploys a runnable workload rather than a reusable library.
+type: application
+# chart version changes when templates or chart defaults change.
+version: 1.0.0
+# appVersion records the application release packaged by this chart.
+appVersion: "1.0.0"
