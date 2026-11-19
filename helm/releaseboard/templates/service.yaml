@@ -1,0 +1,20 @@
+# Service gives the changing Pod IP addresses one stable network endpoint.
+apiVersion: v1
+kind: Service
+metadata:
+  # Use the same release-specific naming convention as the Deployment.
+  name: {{ include "releaseboard.fullname" . }}
+  labels:
+    {{- include "releaseboard.labels" . | nindent 4 }}
+spec:
+  # Service type controls how the application is exposed.
+  type: {{ .Values.service.type }}
+  # Select only Pods belonging to this Helm release.
+  selector:
+    {{- include "releaseboard.selectorLabels" . | nindent 4 }}
+  # Map the stable Service port to the container's named HTTP port.
+  ports:
+    - name: http
+      port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
