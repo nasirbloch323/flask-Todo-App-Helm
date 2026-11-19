@@ -1,0 +1,36 @@
+# Validate Helm chart changes automatically on pushes and pull requests.
+name: Helm Chart CI
+
+on:
+  # Run checks for changes pushed to the main and feature branches.
+  push:
+    branches:
+      - main
+      - "feature/**"
+  # Run the same checks before a pull request is merged.
+  pull_request:
+  # Allow a maintainer to start the workflow manually.
+  workflow_dispatch:
+
+jobs:
+  helm-lint:
+    # GitHub provides a clean Ubuntu runner for every workflow run.
+    runs-on: ubuntu-latest
+    steps:
+      # Download the repository contents for this workflow run.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Install the Helm CLI used to validate and render the chart.
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.16.4
+
+      # Check Chart.yaml, values, templates, and common chart mistakes.
+      - name: Lint chart
+        run: helm lint ./helm/releaseboard
+
+      # Render templates to plain Kubernetes YAML without needing a cluster.
+      - name: Render chart
+        run: helm template ci-release ./helm/releaseboard --debug
