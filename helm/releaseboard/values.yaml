@@ -1,0 +1,184 @@
+# These are the default inputs consumed by the templates in the templates/ directory.
+# Override them with --set or a separate values file; do not edit templates for normal configuration.
+
+# image tells Kubernetes which container image to download for the Flask application.
+image:
+  # repository is the Docker image name without its tag.
+  repository: ghcr.io/nasirbloch323/releaseboard
+  # tag identifies the exact application build; Chart appVersion is the fallback.
+  tag: "1.0.0"
+  # pullPolicy controls when kubelet checks the image registry for a newer image.
+  pullPolicy: IfNotPresent
+
+# replicaCount is the number of identical application Pods when autoscaling is disabled.
+replicaCount: 1
+
+# nameOverride optionally replaces the chart name in generated Kubernetes resource names.
+nameOverride: ""
+# fullnameOverride optionally replaces the complete generated resource name.
+fullnameOverride: ""
+
+# serviceAccount controls the Kubernetes identity assigned to application Pods.
+serviceAccount:
+  # create asks Helm to create a dedicated ServiceAccount for this release.
+  create: true
+  # automount controls whether Kubernetes API credentials are mounted into the container.
+  automount: false
+  # annotations allows cloud integrations such as AWS IAM Roles for Service Accounts.
+  annotations: {}
+  # name can pin an existing ServiceAccount; empty means use the generated name.
+  name: ""
+
+# podAnnotations adds metadata to Pods, often used by monitoring agents.
+podAnnotations: {}
+# podLabels adds extra labels to Pods for selection and organization.
+podLabels: {}
+
+# podSecurityContext applies security settings to the Pod filesystem and process group.
+podSecurityContext:
+  # fsGroup makes mounted writable volumes accessible to the application group.
+  fsGroup: 10001
+  # seccompProfile restricts system calls using the container runtime's default profile.
+  seccompProfile:
+    # type RuntimeDefault selects the runtime-maintained seccomp policy.
+    type: RuntimeDefault
+
+# securityContext applies security restrictions directly to the Flask container.
+securityContext:
+  # allowPrivilegeEscalation false prevents a process from gaining extra privileges.
+  allowPrivilegeEscalation: false
+  # readOnlyRootFilesystem reduces writable locations inside the container.
+  readOnlyRootFilesystem: true
+  # runAsNonRoot prevents the container from running with UID 0.
+  runAsNonRoot: true
+  # runAsUser selects the non-root UID created in the Dockerfile.
+  runAsUser: 10001
+  # capabilities.drop removes Linux capabilities the web app does not need.
+  capabilities:
+    # ALL removes every ambient Linux capability from the container.
+    drop:
+      - ALL
+
+# service exposes the Pods inside the cluster and optionally through a cloud load balancer.
+service:
+  # type ClusterIP is internal-only; use LoadBalancer for a cloud-managed external address.
+  type: ClusterIP
+  # port is the port clients use when connecting to the Kubernetes Service.
+  port: 80
+  # targetPort is the port on which Gunicorn listens inside each container.
+  targetPort: 5000
+
+# ingress creates an HTTP routing rule when an Ingress controller is installed in the cluster.
+ingress:
+  # enabled false avoids creating an Ingress in clusters without an ingress controller.
+  enabled: false
+  # className selects the controller implementation, for example nginx.
+  className: nginx
+  # annotations configures controller-specific behavior such as TLS redirects.
+  annotations: {}
+  # hosts lists DNS names and paths routed to this application.
+  hosts:
+    # first host entry is an example domain; replace it before production use.
+    - host: releaseboard.example.com
+      # paths contains URL prefixes handled by this Ingress rule.
+      paths:
+        # path "/" routes all application URLs to the Flask Service.
+        - path: /
+          # pathType Prefix matches this path and all nested paths.
+          pathType: Prefix
+  # tls is empty by default; add a secretName and host list after configuring certificates.
+  tls: []
+
+# appConfig contains non-sensitive runtime settings injected through a ConfigMap.
+appConfig:
+  # environment is displayed in the dashboard header.
+  environment: learning
+  # databasePath points to the SQLite file on the mounted persistent volume.
+  databasePath: /data/releases.db
+
+# secret contains sensitive values; supply a real value through a private values file or external secret manager.
+secret:
+  # create false avoids creating a weak example Secret in a public repository.
+  create: false
+  # flaskSecretKey should be supplied securely when secret.create is enabled.
+  flaskSecretKey: ""
+
+# persistence stores the SQLite database outside the container writable layer.
+persistence:
+  # enabled creates and mounts a PersistentVolumeClaim for /data.
+  enabled: true
+  # accessModes describes how the volume may be mounted; RWO is common for block storage.
+  accessModes:
+    - ReadWriteOnce
+  # size is the requested storage capacity.
+  size: 1Gi
+  # storageClassName empty uses the cluster's default StorageClass.
+  storageClassName: ""
+  # existingClaim can reference a pre-created PVC instead of creating one.
+  existingClaim: ""
+
+# resources defines CPU and memory requests and limits for scheduling and protection.
+resources:
+  # requests are the minimum resources Kubernetes uses for scheduling.
+  requests:
+    # cpu is measured in cores; 100m means one tenth of a CPU core.
+    cpu: 100m
+    # memory is the minimum RAM requested by the container.
+    memory: 128Mi
+  # limits cap the maximum CPU and memory the container may consume.
+  limits:
+    # cpu throttles the container if it tries to exceed this CPU amount.
+    cpu: 500m
+    # memory exceeding this limit can cause the container to be terminated.
+    memory: 512Mi
+
+# probes tell Kubernetes whether the process is alive and ready to receive traffic.
+probes:
+  # liveness checks whether Kubernetes should restart the container.
+  liveness:
+    # path is the Flask health endpoint.
+    path: /healthz
+    # initialDelaySeconds gives the app time to start before the first probe.
+    initialDelaySeconds: 10
+    # periodSeconds sets how often Kubernetes repeats the probe.
+    periodSeconds: 10
+  # readiness checks whether the Pod should receive Service traffic.
+  readiness:
+    # path checks the database connection as well as the application.
+    path: /readyz
+    # initialDelaySeconds delays readiness checks during application startup.
+    initialDelaySeconds: 5
+    # periodSeconds controls readiness check frequency.
+    periodSeconds: 5
+
+# autoscaling can replace the fixed replicaCount with a HorizontalPodAutoscaler.
+autoscaling:
+  # enabled false keeps the first deployment simple and predictable.
+  enabled: false
+  # minReplicas is the lowest replica count allowed by the autoscaler.
+  minReplicas: 1
+  # maxReplicas is the highest replica count allowed by the autoscaler.
+  maxReplicas: 5
+  # targetCPUUtilizationPercentage is the average CPU target that triggers scaling.
+  targetCPUUtilizationPercentage: 70
+
+# podDisruptionBudget limits voluntary disruptions during maintenance operations.
+podDisruptionBudget:
+  # enabled false avoids a PDB for a single-replica learning deployment.
+  enabled: false
+  # minAvailable is the minimum number of Pods that should remain available.
+  minAvailable: 1
+
+# networkPolicy optionally restricts which Pods may connect to the application.
+networkPolicy:
+  # enabled false avoids blocking traffic in clusters without a CNI supporting NetworkPolicy.
+  enabled: false
+  # ingressFromNamespaceSelector limits allowed callers to namespaces with these labels.
+  ingressFromNamespaceSelector: {}
+
+# nodeSelector chooses nodes with matching labels; empty means any eligible node.
+nodeSelector: {}
+# tolerations allow scheduling onto nodes with matching taints.
+tolerations: []
+# affinity expresses advanced Pod placement preferences and requirements.
+affinity: {}
