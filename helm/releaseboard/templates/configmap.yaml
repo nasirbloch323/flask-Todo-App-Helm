@@ -1,0 +1,16 @@
+# A ConfigMap stores non-secret configuration separately from the container image.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  # Give this ConfigMap a release-specific name.
+  name: {{ include "releaseboard.fullname" . }}-config
+  # Reuse chart labels for easier filtering.
+  labels:
+    {{- include "releaseboard.labels" . | nindent 4 }}
+data:
+  # APP_ENV controls the environment label displayed by the Flask dashboard.
+  APP_ENV: {{ .Values.appConfig.environment | quote }}
+  # DATABASE_PATH tells Python where the persistent SQLite file lives.
+  DATABASE_PATH: {{ .Values.appConfig.databasePath | quote }}
+  # APP_VERSION identifies the application build shown in the UI.
+  APP_VERSION: {{ .Chart.AppVersion | quote }}
