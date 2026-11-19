@@ -37,6 +37,9 @@ def initialize_database():
             )
         """)  # Define the fields our release tracker stores.
 
+# Gunicorn imports this module instead of running it as __main__, so initialize here too.
+initialize_database()
+
 @app.get("/")
 def dashboard():
     """Render the release dashboard and its current statistics."""
