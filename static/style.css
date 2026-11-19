@@ -1,73 +1,53 @@
-body {
-    font-family: 'Poppins', sans-serif;
-    background: linear-gradient(135deg, #74ABE2, #5563DE);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-}
+/* Import a clean geometric font for the cloud operations dashboard. */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
-.container {
-    width: 400px;
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(15px);
-    border-radius: 16px;
-    box-shadow: 0 4px 30px rgba(0,0,0,0.2);
-    padding: 20px;
-    text-align: center;
-}
+/* Define reusable colors so the whole interface stays visually consistent. */
+:root{--bg:#0b1020;--panel:#121a2d;--panel2:#172238;--line:#26344d;--text:#edf3ff;--muted:#8998b2;--cyan:#63e2d1;--blue:#7d9cff;--green:#68d6a5;--amber:#f4c66a;}
 
-h1 {
-    color: white;
-}
+/* Apply predictable sizing and remove browser default spacing. */
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 15% 0%,#1c3151 0,transparent 38%),var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
 
-form input {
-    width: 70%;
-    padding: 10px;
-    border: none;
-    border-radius: 10px;
-}
+/* Constrain the dashboard width while keeping comfortable mobile gutters. */
+.shell{width:min(1180px,calc(100% - 48px));margin:0 auto}
 
-form button {
-    padding: 10px 15px;
-    border: none;
-    background-color: #fff;
-    color: #5563DE;
-    border-radius: 10px;
-    cursor: pointer;
-}
+/* Keep brand and environment metadata on one balanced header row. */
+.topbar{height:86px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ffffff12}
+.brand{display:flex;align-items:center;gap:12px}.brand-mark{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--cyan),#5b8bff);display:grid;place-items:center;color:#081321;font:700 22px 'Space Grotesk'}
+.brand strong,.brand small{display:block}.brand strong{font:600 15px 'Space Grotesk'}.brand small{font-size:11px;color:var(--muted);margin-top:3px}
+.runtime{font-size:12px;color:#c0cbe0;border:1px solid var(--line);border-radius:30px;padding:9px 13px;text-transform:capitalize}.pulse{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:7px;box-shadow:0 0 12px var(--green)}
 
-ul {
-    list-style: none;
-    padding: 0;
-    margin-top: 20px;
-}
+/* Give the headline visual priority and reserve space for the abstract illustration. */
+.hero{display:flex;justify-content:space-between;align-items:center;padding:64px 0 44px;position:relative;overflow:hidden}.eyebrow{font-size:10px;letter-spacing:2px;color:var(--cyan);font-weight:700;margin:0 0 12px}
+h1,h2,h3,p{margin-top:0}h1{font:600 clamp(38px,5vw,60px)/1.05 'Space Grotesk';letter-spacing:-2.5px;margin-bottom:14px}h1 em{font-style:normal;color:var(--cyan)}.subheading{max-width:570px;color:var(--muted);font-size:15px;line-height:1.7;margin-bottom:0}
+.hero-art{width:190px;height:150px;position:relative;border:1px solid #6ce5d52a;border-radius:50%;display:grid;place-items:center;transform:rotate(-18deg);margin-right:65px}.hero-art span{font-size:52px;color:var(--cyan);transform:rotate(18deg);z-index:2}.orbit{position:absolute;border:1px solid #7d9cff55;border-radius:50%;inset:16px -25px}.orbit-two{inset:-18px 30px;border-color:#63e2d155}
 
-li {
-    background: rgba(255,255,255,0.1);
-    padding: 10px;
-    border-radius: 8px;
-    margin-bottom: 10px;
-    color: white;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
+/* Display three small metric cards with equal widths. */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}.stat-card,.panel{background:linear-gradient(145deg,#151f34,#10182a);border:1px solid var(--line);border-radius:16px}.stat-card{padding:20px 22px}.stat-label,.stat-foot{display:block;color:var(--muted);font-size:10px;letter-spacing:1.2px}.stat-card strong{display:block;font:600 34px 'Space Grotesk';margin:8px 0 3px}.stat-foot{letter-spacing:0;font-size:11px}.green{color:var(--green)}.amber{color:var(--amber)}
 
-li.done {
-    text-decoration: line-through;
-    opacity: 0.6;
-}
+/* Place the form and release pipeline in a responsive two-column workspace. */
+.workspace{display:grid;grid-template-columns:minmax(300px,.82fr) minmax(0,1.5fr);gap:16px}.panel{padding:24px;min-width:0}.panel-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}.panel-heading .eyebrow{margin-bottom:7px}.panel h2{font:600 20px 'Space Grotesk';margin:0}.step,.count{font-size:10px;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:7px 10px}
 
-a.delete {
-    color: #ff6961;
-    text-decoration: none;
-    font-weight: bold;
-}
+/* Style form labels and inputs for consistent keyboard-friendly controls. */
+.release-form label{display:block;color:#c5d0e2;font-size:12px;margin:0 0 8px}.release-form input,.release-form select,.release-form textarea,.release-actions select{width:100%;background:#0b1426;border:1px solid #2a3a55;border-radius:9px;color:var(--text);padding:12px;font:12px 'DM Sans';outline:none}.release-form input:focus,.release-form select:focus,.release-form textarea:focus{border-color:var(--cyan)}.release-form>input,.release-form>textarea{margin-bottom:17px}.release-form textarea{resize:vertical}.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:17px}.optional{float:right;color:var(--muted);font-size:9px}
+.primary-button{width:100%;padding:13px 15px;background:linear-gradient(100deg,#65dfd0,#83a7ff);border:0;border-radius:9px;color:#071522;font-weight:700;font-size:12px;cursor:pointer}.primary-button span{float:right;font-size:16px;margin-top:-3px}.primary-button:hover{filter:brightness(1.08)}
 
-.actions a {
-    color: white;
-    text-decoration: underline;
-    margin: 5px;
-}
+/* Explain the persistent database design next to the release creation form. */
+.hint{display:flex;gap:11px;margin-top:22px;padding:13px;background:#1b2a40;border-radius:10px;color:var(--muted)}.hint>span{color:var(--cyan)}.hint p{font-size:10px;line-height:1.6;margin:0}.hint strong{color:#dce8fa;font-size:11px}.hint code{color:var(--cyan)}
 
+/* Render each release as a compact row with service identity and workflow controls. */
+.release-list{display:grid}.release-row{display:flex;align-items:center;gap:12px;padding:15px 0;border-top:1px solid #ffffff12}.release-icon{width:36px;height:36px;flex:none;display:grid;place-items:center;border-radius:10px;background:#263653;color:var(--cyan);font:600 15px 'Space Grotesk'}.release-info{flex:1;min-width:0}.release-info strong,.release-info span,.release-info small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.release-info strong{font-size:12px}.release-info span{font-size:10px;color:var(--muted);margin-top:4px}.release-info small{font-size:10px;color:#71839f;margin-top:4px}.release-actions{display:flex;align-items:center;gap:7px}.release-actions select{width:auto;max-width:115px;padding:8px;font-size:10px}.delete-button{background:transparent;border:1px solid var(--line);color:#ff8794;border-radius:8px;width:29px;height:29px;font-size:19px;cursor:pointer}
+
+/* Show a friendly message before the first release has been added. */
+.empty-state{text-align:center;padding:55px 10px;color:var(--muted)}.empty-state>span{font-size:36px;color:var(--cyan)}.empty-state h3{color:var(--text);font:500 16px 'Space Grotesk';margin:10px 0}.empty-state p{font-size:11px}
+
+/* Keep feedback messages visible without changing the dashboard layout. */
+.flash-list{margin-bottom:14px}.flash{padding:11px 14px;border-radius:8px;font-size:12px}.flash.success{background:#12372f;color:#8ce4bd}.flash.error{background:#40212b;color:#ff9eaa}
+
+/* Align learning links and project credits along the bottom edge. */
+footer{display:flex;justify-content:space-between;gap:15px;padding:26px 0 35px;color:#63738e;font-size:9px;letter-spacing:1px}footer div{display:flex;gap:18px}footer a{color:#8ea0bb;text-decoration:none;letter-spacing:0}footer a:hover{color:var(--cyan)}
+
+/* Stack columns and hide decorative artwork on narrower screens. */
+@media(max-width:800px){.workspace{grid-template-columns:1fr}.hero-art{margin-right:15px;width:120px;height:100px}.hero{padding-top:45px}}
+/* Make metric cards and release controls fit small phone screens. */
+@media(max-width:520px){.shell{width:calc(100% - 28px)}.topbar{height:70px}.runtime{font-size:10px;padding:7px}.hero{padding:42px 0 30px}.hero-art{display:none}h1{font-size:42px}.stats{gap:8px}.stat-card{padding:13px 11px}.stat-card strong{font-size:27px}.stat-label{font-size:8px}.stat-foot{font-size:9px}.panel{padding:18px}.release-row{gap:8px}.release-actions{gap:4px}.release-actions select{max-width:93px;padding:7px 4px}footer{flex-direction:column}footer div{gap:13px}}
