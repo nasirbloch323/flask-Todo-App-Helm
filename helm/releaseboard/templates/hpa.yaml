@@ -1,0 +1,26 @@
+{{- if .Values.autoscaling.enabled }}
+# HorizontalPodAutoscaler changes the replica count based on observed resource usage.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "releaseboard.fullname" . }}
+  labels:
+    {{- include "releaseboard.labels" . | nindent 4 }}
+spec:
+  # targetRef identifies the Deployment whose replicas should be adjusted.
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "releaseboard.fullname" . }}
+  # Keep the workload between the configured lower and upper replica counts.
+  minReplicas: {{ .Values.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.autoscaling.maxReplicas }}
+  # Metrics determine when Kubernetes should add or remove Pods.
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.targetCPUUtilizationPercentage }}
+{{- end }}
